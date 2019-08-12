@@ -50,15 +50,48 @@ DynamicSparseNumberBase<T,I,SubType>::resize(std::size_t s)
 
 template <typename T, typename I, template <typename, typename> class SubType>
 inline
-DynamicSparseNumberBase<T,I,SubType>::DynamicSparseNumberBase() {}
+void
+DynamicSparseNumberBase<T,I,SubType>::reserve(std::size_t s)
+{ metaphysicl_assert_equal_to(_data.capacity(), _indices.capacity());
+  _data.reserve(s);
+  _indices.reserve(s); }
+
+template <typename T, typename I, template <typename, typename> class SubType>
+inline
+DynamicSparseNumberBase<T,I,SubType>::DynamicSparseNumberBase() {
+  _data.reserve(12);
+  _indices.reserve(12);
+}
+
+template <typename T, typename I, template <typename, typename> class SubType>
+inline
+DynamicSparseNumberBase<T,I,SubType>::DynamicSparseNumberBase(const DynamicSparseNumberBase<T, I, SubType> & src)
+{
+  this->reserve(12);
+  this->resize(src.size());
+  std::copy(src.nude_data().begin(), src.nude_data().end(), _data.begin());
+  std::copy(src.nude_indices().begin(), src.nude_indices().end(), _indices.begin());
+}
 
 template <typename T, typename I, template <typename, typename> class SubType>
 template <typename T2, typename I2>
 inline
 DynamicSparseNumberBase<T,I,SubType>::DynamicSparseNumberBase(const DynamicSparseNumberBase<T2, I2, SubType> & src)
-{ this->resize(src.size());
+{
+  this->reserve(12);
+  this->resize(src.size());
   std::copy(src.nude_data().begin(), src.nude_data().end(), _data.begin());
-  std::copy(src.nude_indices().begin(), src.nude_indices().end(), _indices.begin()); }
+  std::copy(src.nude_indices().begin(), src.nude_indices().end(), _indices.begin());
+}
+
+template <typename T, typename I, template <typename, typename> class SubType>
+template <typename T2, typename I2>
+inline
+DynamicSparseNumberBase<T,I,SubType>::DynamicSparseNumberBase(DynamicSparseNumberBase<T2, I2, SubType> && src)
+{
+  _data = std::move(src.nude_data());
+  _indices = std::move(src.nude_indices());
+}
 
 template <typename T, typename I, template <typename, typename> class SubType>
 inline

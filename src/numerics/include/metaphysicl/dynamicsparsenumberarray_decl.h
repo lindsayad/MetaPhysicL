@@ -100,7 +100,10 @@ public:
 #endif
 
   template <typename T2, typename I2>
-  DynamicSparseNumberArray(DynamicSparseNumberArray<T2, I2> src);
+  DynamicSparseNumberArray(const DynamicSparseNumberArray<T2, I2> & src);
+
+  template <typename T2, typename I2>
+  DynamicSparseNumberArray(DynamicSparseNumberArray<T2, I2> && src);
 
   template <typename T2, typename I2>
   DynamicSparseNumberArray

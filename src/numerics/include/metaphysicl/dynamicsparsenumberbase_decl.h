@@ -62,6 +62,8 @@ public:
 
   void resize(std::size_t s);
 
+  void reserve(std::size_t s);
+
   DynamicSparseNumberBase();
 
 #if __cplusplus >= 201103L
@@ -73,13 +75,16 @@ public:
 
   // Standard copy operations get implicitly deleted upon move
   // constructor definition, so we manually enable them.
-  DynamicSparseNumberBase(const DynamicSparseNumberBase<T, I, SubType> & src) = default;
+  DynamicSparseNumberBase(const DynamicSparseNumberBase<T, I, SubType> & src);
 
   DynamicSparseNumberBase& operator= (const DynamicSparseNumberBase<T, I, SubType> & src) = default;
 #endif
 
   template <typename T2, typename I2>
   DynamicSparseNumberBase(const DynamicSparseNumberBase<T2, I2, SubType> & src);
+
+  template <typename T2, typename I2>
+  DynamicSparseNumberBase(DynamicSparseNumberBase<T2, I2, SubType> && src);
 
   T* raw_data();
 
