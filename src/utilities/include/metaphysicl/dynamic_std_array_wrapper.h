@@ -49,6 +49,7 @@ public:
   DynamicStdArrayWrapper(const DynamicStdArrayWrapper & src)
   {
     _dynamic_n = src._dynamic_n;
+    _offset = src._offset;
     metaphysicl_assert(_dynamic_n < N);
     std::copy(src.begin(), src.end(), _data.begin());
   }
@@ -57,6 +58,7 @@ public:
   DynamicStdArrayWrapper(DynamicStdArrayWrapper && src)
   {
     _dynamic_n = src._dynamic_n;
+    _offset = src._offset;
     metaphysicl_assert(_dynamic_n < N);
     auto src_it = src.begin(), src_end = src.end(), this_it = _data.begin();
     for (; src_it != src_end; ++src_it, ++this_it)
@@ -66,6 +68,7 @@ public:
   DynamicStdArrayWrapper & operator=(const DynamicStdArrayWrapper & src)
   {
     _dynamic_n = src._dynamic_n;
+    _offset = src._offset;
     metaphysicl_assert(_dynamic_n < N);
     std::copy(src.begin(), src.end(), _data.begin());
     return *this;
@@ -75,6 +78,7 @@ public:
   DynamicStdArrayWrapper & operator=(DynamicStdArrayWrapper && src)
   {
     _dynamic_n = src._dynamic_n;
+    _offset = src._offset;
     metaphysicl_assert(_dynamic_n < N);
     auto src_it = src.begin(), src_end = src.end(), this_it = _data.begin();
     for (; src_it != src_end; ++src_it, ++this_it)
@@ -91,13 +95,13 @@ public:
   iterator end()
   {
     metaphysicl_assert(_dynamic_n <= N);
-    return _data.end() - (N - _dynamic_n);
+    return _data.end() - _offset;
   }
 
   const_iterator end() const
   {
     metaphysicl_assert(_dynamic_n <= N);
-    return _data.end() - (N - _dynamic_n);
+    return _data.end() - _offset;
   }
 
   T & operator[](size_type i)
@@ -118,18 +122,19 @@ public:
   {
     metaphysicl_assert(new_size <= N);
     _dynamic_n = new_size;
+    _offset = N - _dynamic_n;
   }
 
   reverse_iterator rbegin()
   {
     metaphysicl_assert(_dynamic_n <= N);
-    return _data.rbegin() + (N - _dynamic_n);
+    return _data.rbegin() + _offset;
   }
 
   const_reverse_iterator rbegin() const
   {
     metaphysicl_assert(_dynamic_n <= N);
-    return _data.rbegin() + (N - _dynamic_n);
+    return _data.rbegin() + _offset;
   }
 
   reverse_iterator rend() { return _data.rend(); }
@@ -139,6 +144,7 @@ public:
 private:
   std::array<T, N> _data;
   std::size_t _dynamic_n = 0;
+  std::size_t _offset = N;
 };
 
 template <std::size_t N>
