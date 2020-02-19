@@ -391,12 +391,19 @@ operator opname  (const DualNumber<T,D>& a, const T2& b) \
   return (a.value() opname b); \
 }
 
-    DualNumber_compare(>) DualNumber_compare(>=) DualNumber_compare(<) DualNumber_compare(<=)
-        DualNumber_compare(==) DualNumber_compare(!=) DualNumber_compare(&&) DualNumber_compare(||)
+DualNumber_compare(>)
+DualNumber_compare(>=)
+DualNumber_compare(<)
+DualNumber_compare(<=)
+DualNumber_compare(==)
+DualNumber_compare(!=)
+DualNumber_compare(&&)
+DualNumber_compare(||)
 
-            template <typename T, typename D>
-            inline std::ostream &
-            operator<<(std::ostream & output, const DualNumber<T, D> & a)
+
+template <typename T, typename D>
+inline std::ostream &
+operator<<(std::ostream & output, const DualNumber<T, D> & a)
 {
   return output << '(' << a.value() << ',' << a.derivatives() << ')';
 }
