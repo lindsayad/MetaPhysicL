@@ -38,6 +38,10 @@
 #include "metaphysicl/testable.h"
 #include "metaphysicl/dualnumber_forward.h"
 
+#ifdef METAPHYSICL_HAVE_TIMPI
+#include "timpi/attributes.h"
+#endif
+
 namespace MetaPhysicL {
 
 template <typename T, typename D=T>
@@ -732,5 +736,25 @@ class numeric_limits<DualNumber<T, D, asd> > :
 
 } // namespace std
 
+#ifdef METAPHYSICL_HAVE_TIMPI
+namespace TIMPI
+{
+template <typename T, typename D>
+struct Attributes<MetaPhysicL::DualNumber<T, D>>
+{
+  static const bool has_min_max = Attributes<T>::has_min_max && Attributes<D>::has_min_max;
 
+  static void set_lowest(MetaPhysicL::DualNumber<T, D> & dn)
+    {
+      Attributes<T>::set_lowest(dn.value());
+      Attributes<D>::set_lowest(dn.derivatives());
+    }
+  static void set_highest(MetaPhysicL::DualNumber<T, D> & dn)
+    {
+      Attributes<T>::set_highest(dn.value());
+      Attributes<D>::set_highest(dn.derivatives());
+    }
+};
+}
+#endif
 #endif // METAPHYSICL_DUALNUMBER_DECL_H

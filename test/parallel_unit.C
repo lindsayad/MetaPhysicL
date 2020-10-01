@@ -4,6 +4,7 @@
 
 #include <metaphysicl/parallel_dynamicsparsenumberarray.h>
 #include <metaphysicl/parallel_dualnumber.h>
+#include <metaphysicl/numberarray.h>
 
 #include <timpi/communicator.h>
 #include <timpi/parallel_implementation.h>
@@ -62,6 +63,8 @@ main(int argc, const char * const * argv)
   TestCommWorld = &init.comm();
 
   testContainerAllGather();
+  TestCommWorld->verify(DualNumber<double, DynamicSparseNumberArray<double, unsigned int>>{});
+  TestCommWorld->verify(DualNumber<double, NumberArray<1, double>>{});
 
   return 0;
 }

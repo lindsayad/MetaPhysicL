@@ -31,10 +31,15 @@
 
 #include <algorithm>
 #include <ostream>
+#include <iterator>
 
 #include "metaphysicl/compare_types.h"
 #include "metaphysicl/ct_types.h"
 #include "metaphysicl/raw_type.h"
+
+#ifdef METAPHYSICL_HAVE_TIMPI
+#include "timpi/attributes.h"
+#endif
 
 namespace MetaPhysicL {
 
@@ -205,11 +210,14 @@ public:
     std::fill(_data, _data+N, T());
   }
 
+  T * begin() { return std::begin(_data); }
+  const T * begin() const { return std::begin(_data); }
+  T * end() { return std::end(_data); }
+  const T * end() const { return std::end(_data); }
+
 private:
   T _data[N];
 };
-
-
 
 //
 // Non-member functions
@@ -615,5 +623,12 @@ class numeric_limits<NumberArray<N, T> > :
 
 } // namespace std
 
+#ifdef METAPHYSICL_HAVE_TIMPI
+namespace TIMPI
+{
+template <typename T, std::size_t N>
+TIMPI_CONTAINER_TYPE(MetaPhysicL::NumberArray<N TIMPI_ATTRIBUTES_COMMA T>);
+}
+#endif
 
 #endif // METAPHYSICL_NUMBERARRAY_H

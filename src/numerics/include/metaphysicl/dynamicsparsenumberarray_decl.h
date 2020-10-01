@@ -33,6 +33,10 @@
 
 #include "metaphysicl/dynamicsparsenumberbase_decl.h"
 
+#ifdef METAPHYSICL_HAVE_TIMPI
+#include "timpi/attributes.h"
+#endif
+
 namespace MetaPhysicL {
 
 // Forward declarations
@@ -247,5 +251,29 @@ class numeric_limits<DynamicSparseNumberArray<T, I> > :
 
 } // namespace std
 
+#ifdef METAPHYSICL_HAVE_TIMPI
+namespace TIMPI
+{
+template <typename T, typename I>
+struct Attributes<MetaPhysicL::DynamicSparseNumberArray<T, I>> :
+    public Attributes<MetaPhysicL::DynamicSparseNumberBase<std::vector<T>,
+                                                           std::vector<I>,
+                                                           MetaPhysicL::DynamicSparseNumberArray,
+                                                           T,
+                                                           I>>
+{
+private:
+  typedef Attributes<MetaPhysicL::DynamicSparseNumberBase<std::vector<T>,
+                                                          std::vector<I>,
+                                                          MetaPhysicL::DynamicSparseNumberArray,
+                                                          T,
+                                                          I>> Base;
 
+public:
+  using Base::has_min_max;
+  using Base::set_lowest;
+  using Base::set_highest;
+};
+}
+#endif
 #endif // METAPHYSICL_DYNAMICSPARSENUMBERARRAY_DECL_H

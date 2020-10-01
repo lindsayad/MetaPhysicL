@@ -41,6 +41,10 @@
 #include "metaphysicl/sparsenumberutils.h"
 #include "metaphysicl/testable.h"
 
+#ifdef METAPHYSICL_HAVE_TIMPI
+#include "timpi/attributes.h"
+#endif
+
 namespace MetaPhysicL {
 
 template <typename Data, typename Indices, template <class...> class SubType, class... SubTypeArgs>
@@ -530,5 +534,35 @@ DynamicSparseNumberBase_decl_std_unary_complex(imag);
 DynamicSparseNumberBase_decl_std_unary_complex(norm);
 } // namespace std
 
+#ifdef METAPHYSICL_HAVE_TIMPI
+namespace TIMPI
+{
+template <typename Data, typename Indices, template <class...> class SubType, class... SubTypeArgs>
+struct Attributes<MetaPhysicL::DynamicSparseNumberBase<Data, Indices, SubType, SubTypeArgs...>>
+{
+  static const bool has_min_max = Attributes<typename Data::value_type>::has_min_max &&
+    Attributes<typename Indices::value_type>::has_min_max;
+
+  static void set_lowest(MetaPhysicL::DynamicSparseNumberBase<Data, Indices, SubType, SubTypeArgs...> & dsnb)
+    {
+      auto & data = dsnb.nude_data();
+      auto & indices = dsnb.nude_indices();
+      for (auto & datum : data)
+        Attributes<typename Data::value_type>::set_lowest(datum);
+      for (auto & index : indices)
+        Attributes<typename Indices::value_type>::set_lowest(index);
+    }
+  static void set_highest(MetaPhysicL::DynamicSparseNumberBase<Data, Indices, SubType, SubTypeArgs...> & dsnb)
+    {
+      auto & data = dsnb.nude_data();
+      auto & indices = dsnb.nude_indices();
+      for (auto & datum : data)
+        Attributes<typename Data::value_type>::set_highest(datum);
+      for (auto & index : indices)
+        Attributes<typename Indices::value_type>::set_highest(index);
+    }
+};
+}
+#endif
 
 #endif // METAPHYSICL_DYNAMICSPARSENUMBERARRAY_DECL_H
