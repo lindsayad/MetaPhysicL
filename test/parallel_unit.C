@@ -8,6 +8,7 @@
 
 #include <timpi/communicator.h>
 #include <timpi/parallel_implementation.h>
+#include <timpi/parallel_sync.h>
 #include <timpi/timpi_init.h>
 
 #include <vector>
@@ -57,6 +58,44 @@ testContainerAllGather()
   }
 }
 
+template <typename D, bool asd>
+void
+testPush()
+{
+  typedef DualNumber<double, D, asd> DualReal;
+
+  const std::size_t comm_size = TestCommWorld->size();
+
+  std::vector<DualReal> vals(comm_size);
+  std::unordered_map<processor_id_type, std::vector<DualReal>> push_data;
+  const unsigned int my_rank = TestCommWorld->rank();
+
+  // Initialize value
+  DualReal in = my_rank;
+  // Initialize derivative
+  in.derivatives().insert(my_rank) = 1.;
+
+  for (std::size_t i = 0; i < comm_size; ++i)
+    push_data[i].push_back(in);
+
+  auto action_functor = [&vals](const processor_id_type pid,
+                                const std::vector<DualReal> & sent_data)
+                          {
+                            metaphysicl_assert(sent_data.size() == 1);
+                            vals[pid] = sent_data[0];
+                          };
+
+  TIMPI::push_parallel_vector_data(*TestCommWorld, push_data, action_functor);
+
+  for (std::size_t i = 0; i < comm_size; ++i)
+  {
+    const auto & dn = vals[i];
+    METAPHYSICL_UNIT_ASSERT(dn.derivatives().size() == 1);
+    METAPHYSICL_UNIT_FP_ASSERT(dn.value(), double(i), TOLERANCE);
+    METAPHYSICL_UNIT_FP_ASSERT(dn.derivatives()[i], double(1), TOLERANCE);
+  }
+}
+
 int
 main(int argc, const char * const * argv)
 {
@@ -67,6 +106,11 @@ main(int argc, const char * const * argv)
   testContainerAllGather<DynamicSparseNumberArray<double, unsigned int>, false>();
   testContainerAllGather<SemiDynamicSparseNumberArray<double, unsigned int, NWrapper<50>>, true>();
   testContainerAllGather<SemiDynamicSparseNumberArray<double, unsigned int, NWrapper<50>>, false>();
+
+  testPush<DynamicSparseNumberArray<double, unsigned int>, true>();
+  testPush<DynamicSparseNumberArray<double, unsigned int>, false>();
+  testPush<SemiDynamicSparseNumberArray<double, unsigned int, NWrapper<50>>, true>();
+  testPush<SemiDynamicSparseNumberArray<double, unsigned int, NWrapper<50>>, false>();
 
   return 0;
 }
