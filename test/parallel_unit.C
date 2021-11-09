@@ -18,7 +18,7 @@
   metaphysicl_error()
 
 #define METAPHYSICL_UNIT_FP_ASSERT(test, true_value, tolerance)                                    \
-  if (!(test < true_value + tolerance && test > true_value - tolerance))               \
+  if (!(test < true_value + tolerance && test > true_value - tolerance))                           \
   metaphysicl_error()
 
 #define TOLERANCE 1e-12
@@ -76,23 +76,114 @@ testPush()
   in.derivatives().insert(my_rank) = 1.;
 
   for (std::size_t i = 0; i < comm_size; ++i)
+  {
+    if (i == my_rank)
+      continue;
     push_data[i].push_back(in);
+  }
 
-  auto action_functor = [&vals](const processor_id_type pid,
-                                const std::vector<DualReal> & sent_data)
-                          {
-                            metaphysicl_assert(sent_data.size() == 1);
-                            vals[pid] = sent_data[0];
-                          };
+  auto action_functor = [&vals](const processor_id_type pid, const std::vector<DualReal> & sent_data) {
+    metaphysicl_assert(sent_data.size() == 1);
+    vals[pid] = sent_data[0];
+  };
 
   TIMPI::push_parallel_vector_data(*TestCommWorld, push_data, action_functor);
 
+  vals[my_rank] = in;
+
   for (std::size_t i = 0; i < comm_size; ++i)
   {
-    const auto & dn = vals[i];
+    auto & dn = vals[i];
     METAPHYSICL_UNIT_ASSERT(dn.derivatives().size() == 1);
     METAPHYSICL_UNIT_FP_ASSERT(dn.value(), double(i), TOLERANCE);
     METAPHYSICL_UNIT_FP_ASSERT(dn.derivatives()[i], double(1), TOLERANCE);
+  }
+}
+
+template <typename D, bool asd>
+void
+testTuplePush()
+{
+  typedef DualNumber<double, D, asd> DualReal;
+  typedef std::tuple<DualReal, DualReal> Datum;
+
+  const std::size_t comm_size = TestCommWorld->size();
+
+  std::vector<Datum> vals(comm_size);
+  std::unordered_map<processor_id_type, std::vector<Datum>> push_data;
+  const unsigned int my_rank = TestCommWorld->rank();
+
+  // Initialize value
+  DualReal in = my_rank;
+  // Initialize derivative
+  in.derivatives().insert(my_rank) = 1.;
+
+  for (std::size_t i = 0; i < comm_size; ++i)
+  {
+    if (i == my_rank)
+      continue;
+    push_data[i].push_back(std::make_tuple(in, in));
+  }
+
+  auto action_functor = [&vals](const processor_id_type pid, const std::vector<Datum> & sent_data) {
+    metaphysicl_assert(sent_data.size() == 1);
+    vals[pid] = sent_data[0];
+  };
+
+  TIMPI::push_parallel_vector_data(*TestCommWorld, push_data, action_functor);
+
+  vals[my_rank] = std::make_tuple(in, in);
+
+  auto check_dn = [](auto & dn, auto i) {
+    METAPHYSICL_UNIT_ASSERT(dn.derivatives().size() == 1);
+    METAPHYSICL_UNIT_FP_ASSERT(dn.value(), double(i), TOLERANCE);
+    METAPHYSICL_UNIT_FP_ASSERT(dn.derivatives()[i], double(1), TOLERANCE);
+  };
+
+  for (std::size_t i = 0; i < comm_size; ++i)
+  {
+    check_dn(std::get<0>(vals[i]), i);
+    check_dn(std::get<1>(vals[i]), i);
+  }
+}
+
+void testTupleIntPush()
+{
+  typedef std::tuple<unsigned int, unsigned int> Datum;
+
+  const std::size_t comm_size = TestCommWorld->size();
+
+  std::vector<Datum> vals(comm_size);
+  std::unordered_map<processor_id_type, std::vector<Datum>> push_data;
+  const unsigned int my_rank = TestCommWorld->rank();
+
+  // Initialize value
+  unsigned int in = my_rank;
+
+  for (std::size_t i = 0; i < comm_size; ++i)
+  {
+    if (i == my_rank)
+      continue;
+    push_data[i].push_back(std::make_tuple(in, in));
+  }
+
+  auto action_functor = [&vals](const processor_id_type pid, const std::vector<Datum> & sent_data) {
+    metaphysicl_assert(sent_data.size() == 1);
+    vals[pid] = sent_data[0];
+  };
+
+  TIMPI::push_parallel_vector_data(*TestCommWorld, push_data, action_functor);
+
+  vals[my_rank] = std::make_tuple(in, in);
+
+  auto check_int = [](auto the_int, auto i) {
+    METAPHYSICL_UNIT_ASSERT(the_int == i);
+  };
+
+  for (std::size_t i = 0; i < comm_size; ++i)
+  {
+    check_int(std::get<0>(vals[i]), i);
+    check_int(std::get<1>(vals[i]), i);
   }
 }
 
@@ -107,17 +198,20 @@ main(int argc, const char * const * argv)
   testContainerAllGather<SemiDynamicSparseNumberArray<double, unsigned int, NWrapper<50>>, true>();
   testContainerAllGather<SemiDynamicSparseNumberArray<double, unsigned int, NWrapper<50>>, false>();
 
-  testPush<DynamicSparseNumberArray<double, unsigned int>, true>();
-  testPush<DynamicSparseNumberArray<double, unsigned int>, false>();
+  testTupleIntPush();
   testPush<SemiDynamicSparseNumberArray<double, unsigned int, NWrapper<50>>, true>();
   testPush<SemiDynamicSparseNumberArray<double, unsigned int, NWrapper<50>>, false>();
+  // The below calls yield valgrind errors
+  testTuplePush<SemiDynamicSparseNumberArray<double, unsigned int, NWrapper<50>>, true>();
+  testTuplePush<SemiDynamicSparseNumberArray<double, unsigned int, NWrapper<50>>, false>();
 
   return 0;
 }
 
 #else
 
-int main()
+int
+main()
 {
   return 0;
 }
