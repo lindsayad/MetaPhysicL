@@ -39,7 +39,7 @@ class NotADuckDualNumber;
 
 // static member initialization
 template <typename T, typename D, bool asd>
-bool DualNumber<T,D,asd>::do_derivatives = true;
+thread_local bool DualNumber<T,D,asd>::do_derivatives = true;
 
 // Member definitions
 template <typename T, typename D, bool asd>

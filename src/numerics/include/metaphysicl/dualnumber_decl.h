@@ -154,7 +154,7 @@ public:
   DualNumber<T, D, asd> & operator/= (const T2& a);
 
 
-  static bool do_derivatives;
+  static thread_local bool do_derivatives;
 
 private:
   T _val;
