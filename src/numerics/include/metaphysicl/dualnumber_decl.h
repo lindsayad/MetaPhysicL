@@ -525,6 +525,30 @@ struct CompareTypes<DualNumber<T, D, asd>, DualNumber<T, D, asd> > {
   typedef DualNumber<T, typename SymmetricCompareTypes<T, D>::supertype, asd> supertype;
 };
 
+#define MetaPhysicLNestedDualNumberType(TemplateName)                                              \
+  template <typename T, typename D, bool asd, bool reverseorder>                                   \
+  struct TemplateName<DualNumber<DualNumber<T, D, asd>, DualNumber<T, D, asd>, asd>,               \
+                      DualNumber<T, D, asd>,                                                       \
+                      reverseorder>                                                                \
+  {                                                                                                \
+    typedef DualNumber<DualNumber<T, D, asd>, DualNumber<T, D, asd>, asd> supertype;               \
+  };                                                                                               \
+                                                                                                   \
+  template <typename T, typename D, bool asd, bool reverseorder>                                   \
+  struct TemplateName<DualNumber<T, D, asd>,                                                       \
+                      DualNumber<DualNumber<T, D, asd>, DualNumber<T, D, asd>, asd>,               \
+                      reverseorder>                                                                \
+  {                                                                                                \
+    typedef DualNumber<DualNumber<T, D, asd>, DualNumber<T, D, asd>, asd> supertype;               \
+  }
+
+MetaPhysicLNestedDualNumberType(CompareTypes);
+MetaPhysicLNestedDualNumberType(PlusType);
+MetaPhysicLNestedDualNumberType(MinusType);
+MetaPhysicLNestedDualNumberType(MultipliesType);
+MetaPhysicLNestedDualNumberType(DividesType);
+MetaPhysicLNestedDualNumberType(AndType);
+MetaPhysicLNestedDualNumberType(OrType);
 
 template <typename T, typename D, bool asd>
 inline
