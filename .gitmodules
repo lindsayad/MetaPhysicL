@@ -1,3 +1,6 @@
 [submodule "m4/autoconf-submodule"]
 	path = m4/autoconf-submodule
 	url = ../../libMesh/autoconf-submodule
+[submodule "kokkos"]
+	path = kokkos
+	url = ../../kokkos/kokkos.git
