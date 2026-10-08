@@ -38,6 +38,7 @@ AM_TESTS_ENVIRONMENT =
 if CXX17_ENABLED
 if ACSM_ENABLE_KOKKOS
   check_PROGRAMS += kokkos_sparse_derivs_unit
+  check_PROGRAMS += kokkos_dense_derivs_unit
   AM_TESTS_ENVIRONMENT += TEST_KOKKOS=yes; export TEST_KOKKOS;
 endif
   AM_TESTS_ENVIRONMENT += TEST_CXX17=yes; export TEST_CXX17;
@@ -138,6 +139,7 @@ pde_unit_SOURCES = pde_unit.C
 pde_unit_SOURCES += testing.h
 ct_types_unit_SOURCES = ct_types_unit.C
 kokkos_sparse_derivs_unit_SOURCES = kokkos_sparse_derivs_unit.K
+kokkos_dense_derivs_unit_SOURCES = kokkos_dense_derivs_unit.K
 
 #Define tests to actually be run. TESTS is a special automake variable
 TESTS  = run_unit_tests.sh
@@ -168,6 +170,11 @@ kokkos_sparse_derivs_unit_CXXFLAGS = $(AM_CXXFLAGS) $(KOKKOS_CXXFLAGS)
 kokkos_sparse_derivs_unit_LDFLAGS  = $(AM_LDFLAGS)  $(KOKKOS_LDFLAGS)
 kokkos_sparse_derivs_unit_LDADD    = $(KOKKOS_LIBS) $(LIBS)
 
+kokkos_dense_derivs_unit_CPPFLAGS = $(AM_CPPFLAGS) $(KOKKOS_CPPFLAGS)
+kokkos_dense_derivs_unit_CXXFLAGS = $(AM_CXXFLAGS) $(KOKKOS_CXXFLAGS)
+kokkos_dense_derivs_unit_LDFLAGS  = $(AM_LDFLAGS)  $(KOKKOS_LDFLAGS)
+kokkos_dense_derivs_unit_LDADD    = $(KOKKOS_LIBS) $(LIBS)
+
 .K.o:
 	$(KOKKOS_CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	  $(AM_CPPFLAGS) $(CPPFLAGS) $(KOKKOS_CPPFLAGS) \
@@ -180,6 +187,10 @@ kokkos_sparse_derivs_unit_LDADD    = $(KOKKOS_LIBS) $(LIBS)
 kokkos_sparse_derivs_unit_LINK = \
   $(LIBTOOL) --tag=CXX --mode=link $(KOKKOS_CXX) \
   $(LDFLAGS) $(kokkos_sparse_derivs_unit_LDFLAGS) -o $@
+
+kokkos_dense_derivs_unit_LINK = \
+  $(LIBTOOL) --tag=CXX --mode=link $(KOKKOS_CXX) \
+  $(LDFLAGS) $(kokkos_dense_derivs_unit_LDFLAGS) -o $@
 
 CLEANFILES =
 
