@@ -5,6 +5,16 @@
 
 #include <algorithm>
 #include <type_traits>
+#include <utility>
+
+#if __has_include(<version>)
+#include <version>
+#endif
+
+#if defined(__cpp_lib_execution) && __cpp_lib_execution >= 201603L
+#include <execution>
+#define METAPHYSICL_HAVE_EXECUTION_POLICIES
+#endif
 
 namespace MetaPhysicL::detail {
 
@@ -128,6 +138,72 @@ METAPHYSICL_INLINE bool is_sorted(ForwardIt first, ForwardIt last)
 }
 
 #endif
+
+// fill and copy forward to the std:: algorithms wherever those are
+// callable, i.e. everywhere except in device code. Device code falls
+// back to equivalent hand-written loops.
+
+template <typename ForwardIt, typename T>
+METAPHYSICL_INLINE void fill(ForwardIt first, ForwardIt last, const T & value)
+{
+#ifdef METAPHYSICL_KOKKOS_COMPILATION
+  KOKKOS_IF_ON_HOST((std::fill(first, last, value);))
+  KOKKOS_IF_ON_DEVICE((for (; first != last; ++first) *first = value;))
+#else
+  std::fill(first, last, value);
+#endif
+}
+
+template <typename InputIt, typename OutputIt>
+METAPHYSICL_INLINE OutputIt copy(InputIt first, InputIt last, OutputIt d_first)
+{
+#ifdef METAPHYSICL_KOKKOS_COMPILATION
+  KOKKOS_IF_ON_HOST((d_first = std::copy(first, last, d_first);))
+  KOKKOS_IF_ON_DEVICE((for (; first != last; ++first, ++d_first) *d_first = *first;))
+  return d_first;
+#else
+  return std::copy(first, last, d_first);
+#endif
+}
+
+#ifdef METAPHYSICL_HAVE_EXECUTION_POLICIES
+
+// Overloads taking a std:: execution policy. The policy is passed
+// along to std:: on the host and ignored in device code, where the
+// work is already being done by a single device thread.
+
+template <typename ExecutionPolicy>
+using enable_if_execution_policy_t =
+  std::enable_if_t<std::is_execution_policy_v<std::decay_t<ExecutionPolicy>>, int>;
+
+template <typename ExecutionPolicy, typename ForwardIt, typename T,
+          enable_if_execution_policy_t<ExecutionPolicy> = 0>
+METAPHYSICL_INLINE void fill(ExecutionPolicy && policy,
+                             ForwardIt first, ForwardIt last, const T & value)
+{
+#ifdef METAPHYSICL_KOKKOS_COMPILATION
+  KOKKOS_IF_ON_HOST((std::fill(std::forward<ExecutionPolicy>(policy), first, last, value);))
+  KOKKOS_IF_ON_DEVICE(((void)policy; fill(first, last, value);))
+#else
+  std::fill(std::forward<ExecutionPolicy>(policy), first, last, value);
+#endif
+}
+
+template <typename ExecutionPolicy, typename ForwardIt1, typename ForwardIt2,
+          enable_if_execution_policy_t<ExecutionPolicy> = 0>
+METAPHYSICL_INLINE ForwardIt2 copy(ExecutionPolicy && policy,
+                                   ForwardIt1 first, ForwardIt1 last, ForwardIt2 d_first)
+{
+#ifdef METAPHYSICL_KOKKOS_COMPILATION
+  KOKKOS_IF_ON_HOST((d_first = std::copy(std::forward<ExecutionPolicy>(policy), first, last, d_first);))
+  KOKKOS_IF_ON_DEVICE(((void)policy; d_first = copy(first, last, d_first);))
+  return d_first;
+#else
+  return std::copy(std::forward<ExecutionPolicy>(policy), first, last, d_first);
+#endif
+}
+
+#endif // METAPHYSICL_HAVE_EXECUTION_POLICIES
 
 } // namespace MetaPhysicL::detail
 

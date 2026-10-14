@@ -34,6 +34,7 @@
 
 #include "metaphysicl/compare_types.h"
 #include "metaphysicl/ct_types.h"
+#include "metaphysicl/metaphysicl_algorithm.h"
 #include "metaphysicl/metaphysicl_asserts.h"
 #include "metaphysicl/metaphysicl_math.h"
 #include "metaphysicl/raw_type.h"
@@ -89,25 +90,25 @@ public:
   NumberArray & operator=(const NumberArray &) = default;
 
   METAPHYSICL_INLINE NumberArray(const T& val)
-    { for (std::size_t i=0; i != N; ++i) _data[i] = val; }
+    { detail::fill(_data, _data+N, val); }
 
   METAPHYSICL_INLINE NumberArray(const T* vals)
-    { for (std::size_t i=0; i != N; ++i) _data[i] = vals[i]; }
+    { detail::copy(vals, vals+N, _data); }
 
   template <typename T2>
   METAPHYSICL_INLINE NumberArray(const NumberArray<N, T2> & src)
-    { for (std::size_t i=0; i != N; ++i) _data[i] = src[i]; }
+    { if (N) detail::copy(&src[0], &src[0]+N, _data); }
 
   template <typename T2>
   METAPHYSICL_INLINE NumberArray(const T2& val)
-    { for (std::size_t i=0; i != N; ++i) _data[i] = T(val); }
+    { detail::fill(_data, _data+N, T(val)); }
 
   template <typename T2,
             typename std::enable_if<ScalarTraits<T2>::value,
                                     int>::type = 0>
   METAPHYSICL_INLINE NumberArray & operator=(const T2 & val)
     {
-      for (std::size_t i=0; i != N; ++i) _data[i] = T(val);
+      detail::fill(_data, _data+N, T(val));
       return *this;
     }
 
@@ -218,7 +219,7 @@ public:
 
   METAPHYSICL_INLINE void zero()
   {
-    for (std::size_t i=0; i != N; ++i) _data[i] = T();
+    detail::fill(_data, _data+N, T());
   }
 
 private:
