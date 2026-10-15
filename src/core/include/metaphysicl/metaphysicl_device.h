@@ -17,6 +17,10 @@
   do {                                                                         \
     KOKKOS_IF_ON_HOST(__VA_ARGS__)                                             \
   } while (0)
+#define METAPHYSICL_IF_ON_DEVICE(...)                                          \
+  do {                                                                         \
+    KOKKOS_IF_ON_DEVICE(__VA_ARGS__)                                           \
+  } while (0)
 
 namespace MetaPhysicL::detail {
 template <typename T> METAPHYSICL_INLINE auto begin(T &t) {
@@ -37,6 +41,11 @@ template <typename T> METAPHYSICL_INLINE auto begin(T &t) {
 #define METAPHYSICL_IF_ON_HOST(CODE)                                           \
   do {                                                                         \
     METAPHYSICL_UNPAREN CODE                                                   \
+  } while (0)
+
+// Without Kokkos there is no device code, so CODE is dropped.
+#define METAPHYSICL_IF_ON_DEVICE(CODE)                                         \
+  do {                                                                         \
   } while (0)
 
 namespace MetaPhysicL::detail {

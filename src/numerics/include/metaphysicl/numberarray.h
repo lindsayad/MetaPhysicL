@@ -90,25 +90,25 @@ public:
   NumberArray & operator=(const NumberArray &) = default;
 
   METAPHYSICL_INLINE NumberArray(const T& val)
-    { detail::fill(_data, _data+N, val); }
+    { algorithm::fill(_data, _data+N, val); }
 
   METAPHYSICL_INLINE NumberArray(const T* vals)
-    { detail::copy(vals, vals+N, _data); }
+    { algorithm::copy(vals, vals+N, _data); }
 
   template <typename T2>
   METAPHYSICL_INLINE NumberArray(const NumberArray<N, T2> & src)
-    { if (N) detail::copy(&src[0], &src[0]+N, _data); }
+    { if (N) algorithm::copy(&src[0], &src[0]+N, _data); }
 
   template <typename T2>
   METAPHYSICL_INLINE NumberArray(const T2& val)
-    { detail::fill(_data, _data+N, T(val)); }
+    { algorithm::fill(_data, _data+N, T(val)); }
 
   template <typename T2,
             typename std::enable_if<ScalarTraits<T2>::value,
                                     int>::type = 0>
   METAPHYSICL_INLINE NumberArray & operator=(const T2 & val)
     {
-      detail::fill(_data, _data+N, T(val));
+      algorithm::fill(_data, _data+N, T(val));
       return *this;
     }
 
@@ -219,7 +219,7 @@ public:
 
   METAPHYSICL_INLINE void zero()
   {
-    detail::fill(_data, _data+N, T());
+    algorithm::fill(_data, _data+N, T());
   }
 
 private:
