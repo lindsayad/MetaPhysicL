@@ -23,10 +23,11 @@
 // find them and become ambiguous.
 namespace MetaPhysicL::algorithm {
 
-#ifdef METAPHYSICL_KOKKOS_COMPILATION
-
 namespace detail {
 
+// Sign-aware comparison used by the device fallbacks below, so that
+// comparisons between signed and unsigned integers give the
+// mathematically correct result.
 template <typename T, typename U>
 METAPHYSICL_INLINE constexpr bool less(const T & lhs, const U & rhs)
 {
@@ -56,23 +57,28 @@ METAPHYSICL_INLINE constexpr bool less(const T & lhs, const U & rhs)
 
 } // namespace detail
 
+// Each shim below forwards to the std:: algorithm in host code and falls
+// back to an equivalent hand-written loop in device code.
+
 template <typename ForwardIt, typename T>
 METAPHYSICL_INLINE ForwardIt lower_bound(ForwardIt first, ForwardIt last, const T & value)
 {
-  auto count = last - first;
-  while (count > 0)
-  {
-    const auto step = count / 2;
-    auto it = first + step;
-    if (detail::less(*it, value))
+  METAPHYSICL_IF_ON_HOST((first = std::lower_bound(first, last, value);));
+  METAPHYSICL_IF_ON_DEVICE((
+    auto count = last - first;
+    while (count > 0)
     {
-      first = ++it;
-      count -= step + 1;
+      const auto step = count / 2;
+      auto it = first + step;
+      if (detail::less(*it, value))
+      {
+        first = ++it;
+        count -= step + 1;
+      }
+      else
+        count = step;
     }
-    else
-      count = step;
-  }
-
+  ));
   return first;
 }
 
@@ -81,75 +87,57 @@ METAPHYSICL_INLINE BidirectionalIt2 copy_backward(BidirectionalIt1 first,
                                                   BidirectionalIt1 last,
                                                   BidirectionalIt2 result)
 {
-  while (first != last)
-    *(--result) = *(--last);
+  METAPHYSICL_IF_ON_HOST((result = std::copy_backward(first, last, result);));
+  METAPHYSICL_IF_ON_DEVICE((
+    while (first != last)
+      *(--result) = *(--last);
+  ));
   return result;
 }
 
 template <typename ForwardIt>
 METAPHYSICL_INLINE ForwardIt adjacent_find(ForwardIt first, ForwardIt last)
 {
-  if (first == last)
-    return last;
-
-  auto next = first;
-  ++next;
-  for (; next != last; ++first, ++next)
-    if (*first == *next)
-      return first;
-
-  return last;
-}
-
-template <typename ForwardIt>
-METAPHYSICL_INLINE bool is_sorted(ForwardIt first, ForwardIt last)
-{
-  if (first != last)
-  {
-    auto next = first;
-    while (++next != last)
+  ForwardIt found = last;
+  METAPHYSICL_IF_ON_HOST((found = std::adjacent_find(first, last);));
+  METAPHYSICL_IF_ON_DEVICE((
+    if (first != last)
     {
-      if (detail::less(*next, *first))
-        return false;
-      first = next;
+      auto next = first;
+      ++next;
+      for (; next != last; ++first, ++next)
+        if (*first == *next)
+        {
+          found = first;
+          break;
+        }
     }
-  }
-
-  return true;
-}
-
-#else
-
-template <typename ForwardIt, typename T>
-METAPHYSICL_INLINE ForwardIt lower_bound(ForwardIt first, ForwardIt last, const T & value)
-{
-  return std::lower_bound(first, last, value);
-}
-
-template <typename BidirectionalIt1, typename BidirectionalIt2>
-METAPHYSICL_INLINE BidirectionalIt2 copy_backward(BidirectionalIt1 first,
-                                                  BidirectionalIt1 last,
-                                                  BidirectionalIt2 result)
-{
-  return std::copy_backward(first, last, result);
-}
-
-template <typename ForwardIt>
-METAPHYSICL_INLINE ForwardIt adjacent_find(ForwardIt first, ForwardIt last)
-{
-  return std::adjacent_find(first, last);
+  ));
+  return found;
 }
 
 template <typename ForwardIt>
 METAPHYSICL_INLINE bool is_sorted(ForwardIt first, ForwardIt last)
 {
-  return std::is_sorted(first, last);
+  bool sorted = true;
+  METAPHYSICL_IF_ON_HOST((sorted = std::is_sorted(first, last);));
+  METAPHYSICL_IF_ON_DEVICE((
+    if (first != last)
+    {
+      auto next = first;
+      while (++next != last)
+      {
+        if (detail::less(*next, *first))
+        {
+          sorted = false;
+          break;
+        }
+        first = next;
+      }
+    }
+  ));
+  return sorted;
 }
-
-#endif
-
-// fill and copy forward to the std:: algorithms in host code and fall
-// back to equivalent hand-written loops in device code.
 
 template <typename ForwardIt, typename T>
 METAPHYSICL_INLINE void fill(ForwardIt first, ForwardIt last, const T & value)
