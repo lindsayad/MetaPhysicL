@@ -38,6 +38,7 @@ AM_TESTS_ENVIRONMENT =
 if CXX17_ENABLED
 if ACSM_ENABLE_KOKKOS
   check_PROGRAMS += kokkos_sparse_derivs_unit
+  check_PROGRAMS += kokkos_dense_derivs_unit
   AM_TESTS_ENVIRONMENT += TEST_KOKKOS=yes; export TEST_KOKKOS;
 endif
   AM_TESTS_ENVIRONMENT += TEST_CXX17=yes; export TEST_CXX17;
@@ -138,6 +139,9 @@ pde_unit_SOURCES = pde_unit.C
 pde_unit_SOURCES += testing.h
 ct_types_unit_SOURCES = ct_types_unit.C
 kokkos_sparse_derivs_unit_SOURCES = kokkos_sparse_derivs_unit.K
+kokkos_sparse_derivs_unit_SOURCES += kokkos_derivs_unit.h
+kokkos_dense_derivs_unit_SOURCES = kokkos_dense_derivs_unit.K
+kokkos_dense_derivs_unit_SOURCES += kokkos_derivs_unit.h
 
 #Define tests to actually be run. TESTS is a special automake variable
 TESTS  = run_unit_tests.sh
@@ -163,10 +167,22 @@ if TIMPI_LIB_ENABLED
 endif
 endif
 
-kokkos_sparse_derivs_unit_CPPFLAGS = $(AM_CPPFLAGS) $(KOKKOS_CPPFLAGS)
-kokkos_sparse_derivs_unit_CXXFLAGS = $(AM_CXXFLAGS) $(KOKKOS_CXXFLAGS)
-kokkos_sparse_derivs_unit_LDFLAGS  = $(AM_LDFLAGS)  $(KOKKOS_LDFLAGS)
-kokkos_sparse_derivs_unit_LDADD    = $(KOKKOS_LIBS) $(LIBS)
+# Flags shared by every Kokkos unit test. Automake requires per-target
+# variables to be named per target, so each target points at these.
+KOKKOS_TEST_CPPFLAGS = $(AM_CPPFLAGS) $(KOKKOS_CPPFLAGS)
+KOKKOS_TEST_CXXFLAGS = $(AM_CXXFLAGS) $(KOKKOS_CXXFLAGS)
+KOKKOS_TEST_LDFLAGS  = $(AM_LDFLAGS)  $(KOKKOS_LDFLAGS)
+KOKKOS_TEST_LDADD    = $(KOKKOS_LIBS) $(LIBS)
+
+kokkos_sparse_derivs_unit_CPPFLAGS = $(KOKKOS_TEST_CPPFLAGS)
+kokkos_sparse_derivs_unit_CXXFLAGS = $(KOKKOS_TEST_CXXFLAGS)
+kokkos_sparse_derivs_unit_LDFLAGS  = $(KOKKOS_TEST_LDFLAGS)
+kokkos_sparse_derivs_unit_LDADD    = $(KOKKOS_TEST_LDADD)
+
+kokkos_dense_derivs_unit_CPPFLAGS = $(KOKKOS_TEST_CPPFLAGS)
+kokkos_dense_derivs_unit_CXXFLAGS = $(KOKKOS_TEST_CXXFLAGS)
+kokkos_dense_derivs_unit_LDFLAGS  = $(KOKKOS_TEST_LDFLAGS)
+kokkos_dense_derivs_unit_LDADD    = $(KOKKOS_TEST_LDADD)
 
 .K.o:
 	$(KOKKOS_CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
@@ -174,12 +190,15 @@ kokkos_sparse_derivs_unit_LDADD    = $(KOKKOS_LIBS) $(LIBS)
 	  $(AM_CXXFLAGS) $(CXXFLAGS) $(KOKKOS_CXXFLAGS) \
 	  -c $< -o $@
 
-# Force this target’s link step to use the Kokkos compiler/wrapper.
+# Force the Kokkos test link steps to use the Kokkos compiler/wrapper.
 # $(LDFLAGS) must be explicit here because this overrides the default
 # CXXLINK (which includes it); libtool --mode=link handles .la archives.
-kokkos_sparse_derivs_unit_LINK = \
+KOKKOS_TEST_LINK = \
   $(LIBTOOL) --tag=CXX --mode=link $(KOKKOS_CXX) \
-  $(LDFLAGS) $(kokkos_sparse_derivs_unit_LDFLAGS) -o $@
+  $(LDFLAGS) $(KOKKOS_TEST_LDFLAGS) -o $@
+
+kokkos_sparse_derivs_unit_LINK = $(KOKKOS_TEST_LINK)
+kokkos_dense_derivs_unit_LINK  = $(KOKKOS_TEST_LINK)
 
 CLEANFILES =
 

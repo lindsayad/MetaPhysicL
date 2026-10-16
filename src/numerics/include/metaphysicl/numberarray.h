@@ -30,9 +30,11 @@
 #define METAPHYSICL_NUMBERARRAY_H
 
 #include "metaphysicl/metaphysicl_config.h"
+#include "metaphysicl/metaphysicl_device.h"
 
 #include "metaphysicl/compare_types.h"
 #include "metaphysicl/ct_types.h"
+#include "metaphysicl/metaphysicl_algorithm.h"
 #include "metaphysicl/metaphysicl_asserts.h"
 #include "metaphysicl/metaphysicl_math.h"
 #include "metaphysicl/raw_type.h"
@@ -87,113 +89,113 @@ public:
   NumberArray(const NumberArray &) = default;
   NumberArray & operator=(const NumberArray &) = default;
 
-  NumberArray(const T& val)
-    { std::fill(_data, _data+N, val); }
+  METAPHYSICL_INLINE NumberArray(const T& val)
+    { algorithm::fill(_data, _data+N, val); }
 
-  NumberArray(const T* vals)
-    { std::copy(vals, vals+N, _data); }
-
-  template <typename T2>
-  NumberArray(const NumberArray<N, T2> & src)
-    { if (N) std::copy(&src[0], &src[0]+N, _data); }
+  METAPHYSICL_INLINE NumberArray(const T* vals)
+    { algorithm::copy(vals, vals+N, _data); }
 
   template <typename T2>
-  NumberArray(const T2& val)
-    { std::fill(_data, _data+N, T(val)); }
+  METAPHYSICL_INLINE NumberArray(const NumberArray<N, T2> & src)
+    { if (N) algorithm::copy(&src[0], &src[0]+N, _data); }
+
+  template <typename T2>
+  METAPHYSICL_INLINE NumberArray(const T2& val)
+    { algorithm::fill(_data, _data+N, T(val)); }
 
   template <typename T2,
             typename std::enable_if<ScalarTraits<T2>::value,
                                     int>::type = 0>
-  NumberArray & operator=(const T2 & val)
+  METAPHYSICL_INLINE NumberArray & operator=(const T2 & val)
     {
-      std::fill(_data, _data+N, T(val));
+      algorithm::fill(_data, _data+N, T(val));
       return *this;
     }
 
-  T& operator[](std::size_t i)
+  METAPHYSICL_INLINE T& operator[](std::size_t i)
     { metaphysicl_assert_less(i, N);
       return _data[i]; }
 
-  const T& operator[](std::size_t i) const
+  METAPHYSICL_INLINE const T& operator[](std::size_t i) const
     { metaphysicl_assert_less(i, N);
       return _data[i]; }
 
-  T& raw_at (std::size_t i)
+  METAPHYSICL_INLINE T& raw_at (std::size_t i)
     { metaphysicl_assert_less(i, N);
       return _data[i]; }
 
-  const T& raw_at (std::size_t i) const
+  METAPHYSICL_INLINE const T& raw_at (std::size_t i) const
     { metaphysicl_assert_less(i, N);
       return _data[i]; }
 
   template <std::size_t i>
-  typename entry_type<i>::type& get()
+  METAPHYSICL_INLINE typename entry_type<i>::type& get()
     { static_assert(i < N);
       return _data[i]; }
 
   template <std::size_t i>
-  const typename entry_type<i>::type& get() const
+  METAPHYSICL_INLINE const typename entry_type<i>::type& get() const
     { static_assert(i < N);
       return _data[i]; }
 
   template <std::size_t i>
-  typename entry_type<i>::type& insert()
+  METAPHYSICL_INLINE typename entry_type<i>::type& insert()
     { static_assert(i < N);
       return _data[i]; }
 
-  T & insert(std::size_t i)
+  METAPHYSICL_INLINE T & insert(std::size_t i)
     { metaphysicl_assert_less(i, N);
       return _data[i]; }
 
-  std::size_t size() const
+  METAPHYSICL_INLINE std::size_t size() const
     { return N; }
 
-  NumberArray<N,T> operator- () const {
+  METAPHYSICL_INLINE NumberArray<N,T> operator- () const {
     NumberArray<N,T> returnval;
     for (std::size_t i=0; i != N; ++i) returnval[i] = -_data[i];
     return returnval;
   }
 
-  NumberArray<N,T> operator! () const {
+  METAPHYSICL_INLINE NumberArray<N,T> operator! () const {
     NumberArray<N,T> returnval;
     for (std::size_t i=0; i != N; ++i) returnval[i] = !_data[i];
     return returnval;
   }
 
   template <typename T2>
-  NumberArray<N,T>& operator+= (const NumberArray<N,T2>& a)
+  METAPHYSICL_INLINE NumberArray<N,T>& operator+= (const NumberArray<N,T2>& a)
     { for (std::size_t i=0; i != N; ++i) _data[i] += a[i]; return *this; }
 
   template <typename T2>
-  NumberArray<N,T>& operator+= (const T2& a)
+  METAPHYSICL_INLINE NumberArray<N,T>& operator+= (const T2& a)
     { for (std::size_t i=0; i != N; ++i) _data[i] += a; return *this; }
 
   template <typename T2>
-  NumberArray<N,T>& operator-= (const NumberArray<N,T2>& a)
+  METAPHYSICL_INLINE NumberArray<N,T>& operator-= (const NumberArray<N,T2>& a)
     { for (std::size_t i=0; i != N; ++i) _data[i] -= a[i]; return *this; }
 
   template <typename T2>
-  NumberArray<N,T>& operator-= (const T2& a)
+  METAPHYSICL_INLINE NumberArray<N,T>& operator-= (const T2& a)
     { for (std::size_t i=0; i != N; ++i) _data[i] -= a; return *this; }
 
   template <typename T2>
-  NumberArray<N,T>& operator*= (const NumberArray<N,T2>& a)
+  METAPHYSICL_INLINE NumberArray<N,T>& operator*= (const NumberArray<N,T2>& a)
     { for (std::size_t i=0; i != N; ++i) _data[i] *= a[i]; return *this; }
 
   template <typename T2>
-  NumberArray<N,T>& operator*= (const T2& a)
+  METAPHYSICL_INLINE NumberArray<N,T>& operator*= (const T2& a)
     { for (std::size_t i=0; i != N; ++i) _data[i] *= a; return *this; }
 
   template <typename T2>
-  NumberArray<N,T>& operator/= (const NumberArray<N,T2>& a)
+  METAPHYSICL_INLINE NumberArray<N,T>& operator/= (const NumberArray<N,T2>& a)
     { for (std::size_t i=0; i != N; ++i) _data[i] /= a[i]; return *this; }
 
   template <typename T2>
-  NumberArray<N,T>& operator/= (const T2& a)
+  METAPHYSICL_INLINE NumberArray<N,T>& operator/= (const T2& a)
     { for (std::size_t i=0; i != N; ++i) _data[i] /= a; return *this; }
 
   template <typename T2>
-  NumberArray<N, typename DotType<T,T2>::supertype>
+  METAPHYSICL_INLINE NumberArray<N, typename DotType<T,T2>::supertype>
   dot (const NumberArray<N,T2>& a) const
   {
     NumberArray<N, typename DotType<T,T2>::supertype> returnval;
@@ -203,7 +205,7 @@ public:
   }
 
   template <typename T2>
-  typename OuterProductType<NumberArray<N,T>,NumberArray<N,T2> >::supertype
+  METAPHYSICL_INLINE typename OuterProductType<NumberArray<N,T>,NumberArray<N,T2> >::supertype
   outerproduct (const NumberArray<N,T2>& a) const
   {
     typename OuterProductType<NumberArray<N,T>,NumberArray<N,T2> >::supertype
@@ -215,9 +217,9 @@ public:
     return returnval;
   }
 
-  void zero()
+  METAPHYSICL_INLINE void zero()
   {
-    std::fill(_data, _data+N, T());
+    algorithm::fill(_data, _data+N, T());
   }
 
 private:
@@ -231,7 +233,7 @@ private:
 //
 
 template <std::size_t N, typename B, typename T, typename T2>
-inline
+METAPHYSICL_INLINE
 typename CompareTypes<T,T2>::supertype
 if_else (const NumberArray<N,B> & condition, const T & if_true, const T2 & if_false)
 {
@@ -281,7 +283,7 @@ struct NumberArrayUnitVector
 {
   typedef NumberArray<N, T> type;
 
-  static type value() {
+  METAPHYSICL_INLINE static type value() {
     type returnval = 0;
     returnval[index] = 1;
     return returnval;
@@ -294,7 +296,7 @@ struct NumberArrayFullVector
 {
   typedef NumberArray<N,T> type;
 
-  static type value() {
+  METAPHYSICL_INLINE static type value() {
     type returnval;
     for (std::size_t i=0; i != N; ++i)
       returnval[i] = 1;
@@ -305,7 +307,7 @@ struct NumberArrayFullVector
 
 
 template <std::size_t N, typename T>
-inline
+METAPHYSICL_INLINE
 NumberArray<N, T>
 transpose(NumberArray<N, T> a)
 {
@@ -317,6 +319,7 @@ transpose(NumberArray<N, T> a)
 }
 
 template<std::size_t N, typename T>
+METAPHYSICL_INLINE
 NumberArray<N, typename SumType<T>::supertype>
 sum (const NumberArray<N, T>& a)
 {
@@ -331,7 +334,7 @@ sum (const NumberArray<N, T>& a)
 
 #define NumberArray_op(opname, functorname)                                                        \
   template <std::size_t N, typename T, typename T2>                                                \
-  inline auto operator opname(const NumberArray<N, T> & a, const NumberArray<N, T2> & b)           \
+  METAPHYSICL_INLINE auto operator opname(const NumberArray<N, T> & a, const NumberArray<N, T2> & b)           \
       ->NumberArray<N, decltype(a[0] opname b[0])>                                                 \
   {                                                                                                \
     NumberArray<N, decltype(a[0] opname b[0])> returnval;                                          \
@@ -341,7 +344,7 @@ sum (const NumberArray<N, T>& a)
     return returnval;                                                                              \
   }                                                                                                \
   template <std::size_t N, typename T, typename T2>                                                \
-  inline auto operator opname(const T & a, const NumberArray<N, T2> & b)                           \
+  METAPHYSICL_INLINE auto operator opname(const T & a, const NumberArray<N, T2> & b)                           \
       ->NumberArray<N, decltype(a opname b[0])>                                                    \
   {                                                                                                \
     NumberArray<N, decltype(a opname b[0])> returnval;                                             \
@@ -351,7 +354,7 @@ sum (const NumberArray<N, T>& a)
     return returnval;                                                                              \
   }                                                                                                \
   template <std::size_t N, typename T, typename T2>                                                \
-  inline auto operator opname(const NumberArray<N, T> & a, const T2 & b)                           \
+  METAPHYSICL_INLINE auto operator opname(const NumberArray<N, T> & a, const T2 & b)                           \
       ->NumberArray<N, decltype(a[0] opname b)>                                                    \
   {                                                                                                \
     NumberArray<N, decltype(a[0] * b)> returnval;                                                  \
@@ -369,7 +372,7 @@ NumberArray_op(/, Divides)
 
 #define NumberArray_operator_binary_abab(opname, atype, btype, aarg, barg) \
 template <std::size_t N, typename T, typename T2> \
-inline \
+METAPHYSICL_INLINE \
 NumberArray<N, bool> \
 operator opname (const atype& a, const btype& b) \
 { \
@@ -456,7 +459,7 @@ struct RawType<NumberArray<N, T> >
 {
   typedef NumberArray<N, typename RawType<T>::value_type> value_type;
 
-  static value_type value(const NumberArray<N, T>& a)
+  METAPHYSICL_INLINE static value_type value(const NumberArray<N, T>& a)
     {
       value_type returnval;
       for (std::size_t i=0; i != N; ++i)
@@ -494,7 +497,7 @@ using MetaPhysicL::CompareTypes;
 
 #define NumberArray_std_unary_to_bool(funcname) \
 template <std::size_t N, typename T> \
-inline \
+METAPHYSICL_INLINE \
 auto \
 funcname (NumberArray<N, T> a) \
 { \
@@ -508,7 +511,7 @@ funcname (NumberArray<N, T> a) \
 
 #define NumberArray_std_unary(funcname) \
 template <std::size_t N, typename T> \
-inline \
+METAPHYSICL_INLINE \
 NumberArray<N, T> \
 funcname (NumberArray<N, T> a) \
 { \
@@ -521,7 +524,7 @@ funcname (NumberArray<N, T> a) \
 
 #define NumberArray_std_binary_abab(funcname, atype, btype, abtypes, aarg, barg) \
 template <std::size_t N, typename T, typename T2> \
-inline \
+METAPHYSICL_INLINE \
 typename CompareTypes<abtypes>::supertype \
 funcname (const atype& a, const btype& b) \
 { \
@@ -536,7 +539,7 @@ funcname (const atype& a, const btype& b) \
 
 #define NumberArray_std_binary_aa(funcname, atype) \
 template <std::size_t N, typename T> \
-inline \
+METAPHYSICL_INLINE \
 atype \
 funcname (const atype& a, const atype& b) \
 { \

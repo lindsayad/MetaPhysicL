@@ -148,7 +148,7 @@ METAPHYSICL_INLINE
 std::size_t
 DynamicSparseNumberBase<Data, Indices, SubType, SubTypeArgs...>::runtime_index_query(index_value_type i) const
 {
-  auto it = detail::lower_bound(_indices.begin(), _indices.end(), i);
+  auto it = algorithm::lower_bound(_indices.begin(), _indices.end(), i);
   if (it == _indices.end() || *it != i)
     return MetaPhysicL::numeric_limits<std::size_t>::max();
   std::size_t offset = it - _indices.begin();
@@ -161,7 +161,7 @@ METAPHYSICL_INLINE
 std::size_t
 DynamicSparseNumberBase<Data, Indices, SubType, SubTypeArgs...>::runtime_index_of(index_value_type i) const
 {
-  auto it = detail::lower_bound(_indices.begin(), _indices.end(), i);
+  auto it = algorithm::lower_bound(_indices.begin(), _indices.end(), i);
   metaphysicl_assert(it != _indices.end());
   std::size_t offset = it - _indices.begin();
   metaphysicl_assert_equal_to(_indices[offset], i);
@@ -218,7 +218,7 @@ METAPHYSICL_INLINE
 typename DynamicSparseNumberBase<Data, Indices, SubType, SubTypeArgs...>::value_type&
 DynamicSparseNumberBase<Data, Indices, SubType, SubTypeArgs...>::insert(unsigned int i)
 {
-  auto upper_it = detail::lower_bound(_indices.begin(), _indices.end(), i);
+  auto upper_it = algorithm::lower_bound(_indices.begin(), _indices.end(), i);
   std::size_t offset = upper_it - _indices.begin();
 
   // If we don't have entry i, insert it.  Yes this is O(N).
@@ -227,8 +227,8 @@ DynamicSparseNumberBase<Data, Indices, SubType, SubTypeArgs...>::insert(unsigned
     {
       std::size_t old_size = this->size();
       this->resize(old_size+1);
-      detail::copy_backward(_indices.begin()+offset, _indices.begin()+old_size, _indices.end());
-      detail::copy_backward(_data.begin()+offset, _data.begin()+old_size, _data.end());
+      algorithm::copy_backward(_indices.begin()+offset, _indices.begin()+old_size, _indices.end());
+      algorithm::copy_backward(_data.begin()+offset, _data.begin()+old_size, _data.end());
       _indices[offset] = i;
       _data[offset] = 0;
     }
@@ -525,10 +525,10 @@ void
 DynamicSparseNumberBase<Data, Indices, SubType, SubTypeArgs...>::sparsity_trim (const value_type tolerance)
 {
   metaphysicl_assert
-    (detail::adjacent_find(_indices.begin(), _indices.end()) ==
+    (algorithm::adjacent_find(_indices.begin(), _indices.end()) ==
      _indices.end());
 #ifdef METAPHYSICL_HAVE_CXX11
-  metaphysicl_assert(detail::is_sorted(_indices.begin(), _indices.end()));
+  metaphysicl_assert(algorithm::is_sorted(_indices.begin(), _indices.end()));
 #endif
   metaphysicl_assert(tolerance >= 0);
 
@@ -762,18 +762,18 @@ if_else(
     const DynamicSparseNumberBase<Data2, Indices2, SubType, SubTypeArgs2...> & if_false)
 {
   metaphysicl_assert
-    (detail::adjacent_find(condition.nude_indices().begin(), condition.nude_indices().end()) ==
+    (algorithm::adjacent_find(condition.nude_indices().begin(), condition.nude_indices().end()) ==
      condition.nude_indices().end());
   metaphysicl_assert
-    (detail::adjacent_find(if_true.nude_indices().begin(), if_true.nude_indices().end()) ==
+    (algorithm::adjacent_find(if_true.nude_indices().begin(), if_true.nude_indices().end()) ==
      if_true.nude_indices().end());
   metaphysicl_assert
-    (detail::adjacent_find(if_false.nude_indices().begin(), if_false.nude_indices().end()) ==
+    (algorithm::adjacent_find(if_false.nude_indices().begin(), if_false.nude_indices().end()) ==
      if_false.nude_indices().end());
 #ifdef METAPHYSICL_HAVE_CXX11
-  metaphysicl_assert(detail::is_sorted(condition.nude_indices().begin(), condition.nude_indices().end()));
-  metaphysicl_assert(detail::is_sorted(if_true.nude_indices().begin(), if_true.nude_indices().end()));
-  metaphysicl_assert(detail::is_sorted(if_false.nude_indices().begin(), if_false.nude_indices().end()));
+  metaphysicl_assert(algorithm::is_sorted(condition.nude_indices().begin(), condition.nude_indices().end()));
+  metaphysicl_assert(algorithm::is_sorted(if_true.nude_indices().begin(), if_true.nude_indices().end()));
+  metaphysicl_assert(algorithm::is_sorted(if_false.nude_indices().begin(), if_false.nude_indices().end()));
 #endif
 
   typedef
@@ -919,10 +919,10 @@ if_else(
   }
 
   metaphysicl_assert
-    (detail::adjacent_find(returnval.nude_indices().begin(), returnval.nude_indices().end()) ==
+    (algorithm::adjacent_find(returnval.nude_indices().begin(), returnval.nude_indices().end()) ==
      returnval.nude_indices().end());
 #ifdef METAPHYSICL_HAVE_CXX11
-  metaphysicl_assert(detail::is_sorted(returnval.nude_indices().begin(), returnval.nude_indices().end()));
+  metaphysicl_assert(algorithm::is_sorted(returnval.nude_indices().begin(), returnval.nude_indices().end()));
 #endif
 
   return returnval;

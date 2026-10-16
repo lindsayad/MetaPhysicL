@@ -5,11 +5,29 @@
 
 #include <algorithm>
 #include <type_traits>
+#include <utility>
 
-namespace MetaPhysicL::detail {
+#if __has_include(<version>)
+#include <version>
+#endif
 
-#ifdef METAPHYSICL_KOKKOS_COMPILATION
+#if defined(__cpp_lib_execution) && __cpp_lib_execution >= 201603L
+#include <execution>
+#define METAPHYSICL_HAVE_EXECUTION_POLICIES
+#endif
 
+// Shims for <algorithm> functions that are callable from both host and
+// device code. They live in their own namespace, parallel to
+// MetaPhysicL::math, so that argument-dependent lookup of an unqualified
+// call like `using std::fill; fill(...)` on MetaPhysicL types does not
+// find them and become ambiguous.
+namespace MetaPhysicL::algorithm {
+
+namespace detail {
+
+// Sign-aware comparison used by the device fallbacks below, so that
+// comparisons between signed and unsigned integers give the
+// mathematically correct result.
 template <typename T, typename U>
 METAPHYSICL_INLINE constexpr bool less(const T & lhs, const U & rhs)
 {
@@ -37,23 +55,30 @@ METAPHYSICL_INLINE constexpr bool less(const T & lhs, const U & rhs)
     return lhs < rhs;
 }
 
+} // namespace detail
+
+// Each shim below forwards to the std:: algorithm in host code and falls
+// back to an equivalent hand-written loop in device code.
+
 template <typename ForwardIt, typename T>
 METAPHYSICL_INLINE ForwardIt lower_bound(ForwardIt first, ForwardIt last, const T & value)
 {
-  auto count = last - first;
-  while (count > 0)
-  {
-    const auto step = count / 2;
-    auto it = first + step;
-    if (less(*it, value))
+  METAPHYSICL_IF_ON_HOST((first = std::lower_bound(first, last, value);));
+  METAPHYSICL_IF_ON_DEVICE((
+    auto count = last - first;
+    while (count > 0)
     {
-      first = ++it;
-      count -= step + 1;
+      const auto step = count / 2;
+      auto it = first + step;
+      if (detail::less(*it, value))
+      {
+        first = ++it;
+        count -= step + 1;
+      }
+      else
+        count = step;
     }
-    else
-      count = step;
-  }
-
+  ));
   return first;
 }
 
@@ -62,73 +87,106 @@ METAPHYSICL_INLINE BidirectionalIt2 copy_backward(BidirectionalIt1 first,
                                                   BidirectionalIt1 last,
                                                   BidirectionalIt2 result)
 {
-  while (first != last)
-    *(--result) = *(--last);
+  METAPHYSICL_IF_ON_HOST((result = std::copy_backward(first, last, result);));
+  METAPHYSICL_IF_ON_DEVICE((
+    while (first != last)
+      *(--result) = *(--last);
+  ));
   return result;
 }
 
 template <typename ForwardIt>
 METAPHYSICL_INLINE ForwardIt adjacent_find(ForwardIt first, ForwardIt last)
 {
-  if (first == last)
-    return last;
-
-  auto next = first;
-  ++next;
-  for (; next != last; ++first, ++next)
-    if (*first == *next)
-      return first;
-
-  return last;
+  ForwardIt found = last;
+  METAPHYSICL_IF_ON_HOST((found = std::adjacent_find(first, last);));
+  METAPHYSICL_IF_ON_DEVICE((
+    if (first != last)
+    {
+      auto next = first;
+      ++next;
+      for (; next != last; ++first, ++next)
+        if (*first == *next)
+        {
+          found = first;
+          break;
+        }
+    }
+  ));
+  return found;
 }
 
 template <typename ForwardIt>
 METAPHYSICL_INLINE bool is_sorted(ForwardIt first, ForwardIt last)
 {
-  if (first != last)
-  {
-    auto next = first;
-    while (++next != last)
+  bool sorted = true;
+  METAPHYSICL_IF_ON_HOST((sorted = std::is_sorted(first, last);));
+  METAPHYSICL_IF_ON_DEVICE((
+    if (first != last)
     {
-      if (less(*next, *first))
-        return false;
-      first = next;
+      auto next = first;
+      while (++next != last)
+      {
+        if (detail::less(*next, *first))
+        {
+          sorted = false;
+          break;
+        }
+        first = next;
+      }
     }
-  }
-
-  return true;
+  ));
+  return sorted;
 }
-
-#else
 
 template <typename ForwardIt, typename T>
-METAPHYSICL_INLINE ForwardIt lower_bound(ForwardIt first, ForwardIt last, const T & value)
+METAPHYSICL_INLINE void fill(ForwardIt first, ForwardIt last, const T & value)
 {
-  return std::lower_bound(first, last, value);
+  METAPHYSICL_IF_ON_HOST((std::fill(first, last, value);));
+  METAPHYSICL_IF_ON_DEVICE((for (; first != last; ++first) *first = value;));
 }
 
-template <typename BidirectionalIt1, typename BidirectionalIt2>
-METAPHYSICL_INLINE BidirectionalIt2 copy_backward(BidirectionalIt1 first,
-                                                  BidirectionalIt1 last,
-                                                  BidirectionalIt2 result)
+template <typename InputIt, typename OutputIt>
+METAPHYSICL_INLINE OutputIt copy(InputIt first, InputIt last, OutputIt d_first)
 {
-  return std::copy_backward(first, last, result);
+  METAPHYSICL_IF_ON_HOST((d_first = std::copy(first, last, d_first);));
+  METAPHYSICL_IF_ON_DEVICE((for (; first != last; ++first, ++d_first) *d_first = *first;));
+  return d_first;
 }
 
-template <typename ForwardIt>
-METAPHYSICL_INLINE ForwardIt adjacent_find(ForwardIt first, ForwardIt last)
+#ifdef METAPHYSICL_HAVE_EXECUTION_POLICIES
+
+// Overloads taking a std:: execution policy. The policy is passed
+// along to std:: on the host and ignored in device code, where the
+// work is already being done by a single device thread.
+
+namespace detail {
+template <typename ExecutionPolicy>
+using enable_if_execution_policy_t =
+  std::enable_if_t<std::is_execution_policy_v<std::decay_t<ExecutionPolicy>>, int>;
+} // namespace detail
+
+template <typename ExecutionPolicy, typename ForwardIt, typename T,
+          detail::enable_if_execution_policy_t<ExecutionPolicy> = 0>
+METAPHYSICL_INLINE void fill(ExecutionPolicy && policy,
+                             ForwardIt first, ForwardIt last, const T & value)
 {
-  return std::adjacent_find(first, last);
+  METAPHYSICL_IF_ON_HOST((std::fill(std::forward<ExecutionPolicy>(policy), first, last, value);));
+  METAPHYSICL_IF_ON_DEVICE(((void)policy; fill(first, last, value);));
 }
 
-template <typename ForwardIt>
-METAPHYSICL_INLINE bool is_sorted(ForwardIt first, ForwardIt last)
+template <typename ExecutionPolicy, typename ForwardIt1, typename ForwardIt2,
+          detail::enable_if_execution_policy_t<ExecutionPolicy> = 0>
+METAPHYSICL_INLINE ForwardIt2 copy(ExecutionPolicy && policy,
+                                   ForwardIt1 first, ForwardIt1 last, ForwardIt2 d_first)
 {
-  return std::is_sorted(first, last);
+  METAPHYSICL_IF_ON_HOST((d_first = std::copy(std::forward<ExecutionPolicy>(policy), first, last, d_first);));
+  METAPHYSICL_IF_ON_DEVICE(((void)policy; d_first = copy(first, last, d_first);));
+  return d_first;
 }
 
-#endif
+#endif // METAPHYSICL_HAVE_EXECUTION_POLICIES
 
-} // namespace MetaPhysicL::detail
+} // namespace MetaPhysicL::algorithm
 
 #endif // METAPHYSICL_ALGORITHM_H
