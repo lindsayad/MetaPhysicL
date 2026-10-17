@@ -2,7 +2,6 @@
 #include "metaphysicl/metaphysicl_asserts.h"
 
 #include <array>
-#include <iostream>
 #include <vector>
 
 #define METAPHYSICL_UNIT_ASSERT(expr)                                                              \
@@ -54,8 +53,6 @@ int main()
   METAPHYSICL_UNIT_ASSERT(shifted == (std::vector<unsigned int>{1, 1, 2, 3}));
 
 #ifdef METAPHYSICL_HAVE_EXECUTION_POLICIES
-  std::cout << "Testing execution policy overloads" << std::endl;
-
   // The parallel policies are left out so that this test does not need
   // to link against a parallel backend such as TBB.
   std::vector<double> v(100);
@@ -73,8 +70,6 @@ int main()
   for (const auto val : v)
     METAPHYSICL_UNIT_ASSERT(val == 4.0);
 #endif
-#else
-  std::cout << "Execution policy overloads unavailable; skipping them" << std::endl;
 #endif
 
   return 0;
