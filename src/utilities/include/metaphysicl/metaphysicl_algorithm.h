@@ -11,9 +11,20 @@
 #include <version>
 #endif
 
+// libstdc++ advertises __cpp_lib_execution before <execution> is usable
+// everywhere. GCC 9 always selects the TBB parallel backend, so including
+// <execution> fails unless TBB is installed. GCC 10 selects TBB whenever
+// <tbb/tbb.h> exists but only supports the pre-oneTBB interface, so the
+// include fails when oneTBB is installed. GCC 11 and later handle both cases.
 #if defined(__cpp_lib_execution) && __cpp_lib_execution >= 201603L
+#  if !defined(_GLIBCXX_RELEASE) || _GLIBCXX_RELEASE >= 11 || \
+      (_GLIBCXX_RELEASE == 10 && !__has_include(<tbb/tbb.h>))
+#    define METAPHYSICL_HAVE_EXECUTION_POLICIES
+#  endif
+#endif
+
+#ifdef METAPHYSICL_HAVE_EXECUTION_POLICIES
 #include <execution>
-#define METAPHYSICL_HAVE_EXECUTION_POLICIES
 #endif
 
 // Shims for <algorithm> functions that are callable from both host and

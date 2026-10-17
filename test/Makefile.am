@@ -36,6 +36,7 @@ check_PROGRAMS += ct_types_unit
 
 AM_TESTS_ENVIRONMENT =
 if CXX17_ENABLED
+  check_PROGRAMS += algorithm_unit
 if ACSM_ENABLE_KOKKOS
   check_PROGRAMS += kokkos_sparse_derivs_unit
   check_PROGRAMS += kokkos_dense_derivs_unit
@@ -68,6 +69,7 @@ AM_LDFLAGS = $(top_builddir)/src/libmetaphysicl.la
 
 # Sources for these tests
 avoid_spurious_fpe_unit_SOURCES = avoid_spurious_fpe_unit.C
+algorithm_unit_SOURCES = algorithm_unit.C
 compare_types_unit_SOURCES = compare_types_unit.C
 derivs_unit_SOURCES = derivs_unit.C
 nd_derivs_unit_SOURCES = nd_derivs_unit.C

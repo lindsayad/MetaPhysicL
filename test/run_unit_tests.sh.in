@@ -32,6 +32,9 @@ if test x${TEST_CXX14} = xyes; then
     run_program dualnamedarray
     run_program namedindexarray
 fi
+if test x${TEST_CXX17} = xyes; then
+    run_program algorithm
+fi
 if [ x${TEST_CXX17} = xyes ] && [ x${TEST_KOKKOS} = xyes ]; then
     run_program kokkos_sparse_derivs
     run_program kokkos_dense_derivs
