@@ -12,9 +12,8 @@
 #include <version>
 #endif
 
-// Configure verifies that <execution> can actually be included, since
-// some standard libraries advertise __cpp_lib_execution without a usable
-// <execution> in every environment.
+// METAPHYSICL_HAVE_CXX_EXECUTION_POLICIES is set by configure when a
+// program using std::execution::seq compiles (ACSM_CXX_EXECUTION_POLICIES).
 #ifdef METAPHYSICL_HAVE_CXX_EXECUTION_POLICIES
 #include <execution>
 #endif
