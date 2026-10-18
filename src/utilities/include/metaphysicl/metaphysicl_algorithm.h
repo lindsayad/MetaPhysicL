@@ -1,6 +1,7 @@
 #ifndef METAPHYSICL_ALGORITHM_H
 #define METAPHYSICL_ALGORITHM_H
 
+#include "metaphysicl/metaphysicl_config.h"
 #include "metaphysicl/metaphysicl_device.h"
 
 #include <algorithm>
@@ -11,16 +12,11 @@
 #include <version>
 #endif
 
-// libstdc++ advertises __cpp_lib_execution before <execution> is usable
-// everywhere. GCC 9 always selects the TBB parallel backend, so including
-// <execution> fails unless TBB is installed. GCC 10 selects TBB whenever
-// <tbb/tbb.h> exists but only supports the pre-oneTBB interface, so the
-// include fails when oneTBB is installed. GCC 11 and later handle both cases.
-#if defined(__cpp_lib_execution) && __cpp_lib_execution >= 201603L
-#  if !defined(_GLIBCXX_RELEASE) || _GLIBCXX_RELEASE >= 11 || \
-      (_GLIBCXX_RELEASE == 10 && !__has_include(<tbb/tbb.h>))
-#    define METAPHYSICL_HAVE_EXECUTION_POLICIES
-#  endif
+// Configure verifies that <execution> can actually be included, since
+// some standard libraries advertise __cpp_lib_execution without a usable
+// <execution> in every environment.
+#ifdef METAPHYSICL_HAVE_CXX_EXECUTION_POLICIES
+#  define METAPHYSICL_HAVE_EXECUTION_POLICIES
 #endif
 
 #ifdef METAPHYSICL_HAVE_EXECUTION_POLICIES

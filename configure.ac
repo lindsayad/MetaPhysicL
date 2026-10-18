@@ -87,6 +87,10 @@ AM_CONDITIONAL(CXX14_ENABLED,test x$HAVE_CXX14 = x1)
 
 AM_CONDITIONAL(CXX11_ENABLED,test x$HAVE_CXX11 = x1)
 
+dnl Check whether <execution> is usable, for the policy overloads in
+dnl metaphysicl_algorithm.h
+AS_IF([test x$HAVE_CXX17 = x1], [ACSM_CXX_EXECUTION_POLICIES])
+
 dnl Get CXXFLAGS and optional flags for this compiler
 ACSM_SET_CXX_FLAGS
 
