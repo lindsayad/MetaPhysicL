@@ -52,7 +52,7 @@ int main()
                                                    shifted.end()) == shifted.begin() + 1);
   METAPHYSICL_UNIT_ASSERT(shifted == (std::vector<unsigned int>{1, 1, 2, 3}));
 
-#ifdef METAPHYSICL_HAVE_EXECUTION_POLICIES
+#ifdef METAPHYSICL_HAVE_CXX_EXECUTION_POLICIES
   // The parallel policies are left out so that this test does not need
   // to link against a parallel backend such as TBB.
   std::vector<double> v(100);
